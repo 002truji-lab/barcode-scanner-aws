@@ -322,68 +322,37 @@ if prog and prog['encontrados'] < prog['total']:
         <head>
             <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
             <style>
-                body { margin: 0; padding: 0; background-color: transparent; text-align: center; font-family: sans-serif; }
-                #reader { width: 100%; max-width: 450px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #38BDF8; }
+                body { margin: 0; padding: 0; background-color: transparent; text-align: center; font-family: sans-serif; color: white; }
+                #reader { width: 100%; max-width: 450px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #38BDF8; background: #1E293B; }
                 #reader video { object-fit: cover; width: 100% !important; }
-                .btn { background: #38BDF8; color: #0F172A; border: none; padding: 14px 24px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 80%; max-width: 300px; }
-                .btn:active { background: #0ea5e9; }
-                #controls { margin-top: 15px; }
+                /* Estilos para que el menú de selección de cámara y botones se vean grandes y claros */
+                #reader button { background: #38BDF8 !important; color: #0F172A !important; border: none !important; padding: 10px 15px !important; border-radius: 8px !important; font-weight: bold !important; margin: 10px 5px !important; cursor: pointer !important; }
+                #reader select { padding: 10px !important; border-radius: 5px !important; background: #334155 !important; color: white !important; border: 1px solid #38BDF8 !important; margin-bottom: 10px !important; max-width: 95% !important; font-size: 1rem !important; }
+                #reader__dashboard_section_csr span { color: white !important; }
+                #reader__dashboard_section_swaplink { color: #38BDF8 !important; text-decoration: none !important; margin-top: 10px !important; display: inline-block !important; }
             </style>
         </head>
         <body>
             <div id="reader"></div>
-            <div id="controls">
-                <button class="btn" id="start-btn">▶️ Iniciar Cámara</button>
-                <button class="btn" id="swap-cam" style="display:none; margin-top: 10px;">🔄 Cambiar Cámara</button>
-            </div>
             <script>
                 function onScanSuccess(decodedText, decodedResult) {
                     window.parent.postMessage({ type: 'streamlit:setComponentValue', value: decodedText }, '*');
                 }
                 
-                const html5QrCode = new Html5Qrcode("reader");
-                const config = { fps: 15, qrbox: { width: 250, height: 150 } };
-                let useFrontCamera = false;
-                let isScanning = false;
-
-                function startCamera() {
-                    const facingMode = useFrontCamera ? "user" : "environment";
-                    html5QrCode.start({ facingMode: facingMode }, config, onScanSuccess)
-                    .then(() => {
-                        isScanning = true;
-                        document.getElementById('start-btn').style.display = 'none';
-                        document.getElementById('swap-cam').style.display = 'inline-block';
-                    })
-                    .catch(err => {
-                        console.log("Error starting camera: ", err);
-                        // Si falla la cámara trasera, intentar con la frontal como respaldo
-                        if (!useFrontCamera) {
-                            useFrontCamera = true;
-                            startCamera();
-                        } else {
-                            alert("No se pudo acceder a la cámara. Comprueba que el navegador tiene permisos.");
-                        }
-                    });
-                }
+                let config = {
+                    fps: 15,
+                    qrbox: {width: 250, height: 150},
+                    rememberLastUsedCamera: true,
+                    experimentalFeatures: {useBarCodeDetectorIfSupported: true}
+                };
                 
-                document.getElementById('start-btn').addEventListener('click', () => {
-                    startCamera();
-                });
-
-                document.getElementById('swap-cam').addEventListener('click', () => {
-                    if (isScanning) {
-                        html5QrCode.stop().then(() => {
-                            isScanning = false;
-                            useFrontCamera = !useFrontCamera;
-                            startCamera();
-                        }).catch(err => console.log(err));
-                    }
-                });
+                let html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
+                html5QrcodeScanner.render(onScanSuccess);
             </script>
         </body>
         </html>
         """
-        scanned_value = components.html(html_scanner, height=480)
+        scanned_value = components.html(html_scanner, height=600)
         st.text_input("Código capturado en vivo:", key="live_input", placeholder="Escaneando cámara...", on_change=procesar_y_limpiar_live)
     elif modo == "📷 Tomar Foto":
         foto = st.camera_input("Capturar etiqueta")
