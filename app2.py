@@ -335,8 +335,35 @@ if prog and prog['encontrados'] < prog['total']:
         <body>
             <div id="reader"></div>
             <script>
+                let scannerPaused = false;
+                
                 function onScanSuccess(decodedText, decodedResult) {
-                    window.parent.postMessage({ type: 'streamlit:setComponentValue', value: decodedText }, '*');
+                    if (scannerPaused) return;
+                    
+                    const inputs = window.parent.document.querySelectorAll('input');
+                    let targetInput = null;
+                    for (let i = 0; i < inputs.length; i++) {
+                        if (inputs[i].getAttribute('aria-label') === "Código capturado en vivo:") {
+                            targetInput = inputs[i];
+                            break;
+                        }
+                    }
+                    
+                    if (targetInput) {
+                        // Pausar temporalmente para no leer 20 veces el mismo código en 1 segundo
+                        scannerPaused = true;
+                        
+                        // Insertar texto (react-friendly)
+                        let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                        nativeInputValueSetter.call(targetInput, decodedText);
+                        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        
+                        // Simular "Enter"
+                        targetInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+                        
+                        // Reanudar tras 1.5 segundos
+                        setTimeout(() => { scannerPaused = false; }, 1500);
+                    }
                 }
                 
                 let config = {
