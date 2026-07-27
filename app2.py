@@ -336,6 +336,21 @@ if prog and prog['encontrados'] < prog['total']:
             <script>
                 let scannerPaused = false;
                 
+                // Ocultar el selector de cámara mientras se está escaneando para ahorrar espacio
+                setInterval(() => {
+                    const video = document.querySelector('#reader video');
+                    const selectEl = document.querySelector('#reader select');
+                    if (video) {
+                        if (selectEl && selectEl.parentElement) {
+                            selectEl.parentElement.style.display = 'none';
+                        }
+                    } else {
+                        if (selectEl && selectEl.parentElement) {
+                            selectEl.parentElement.style.display = 'block';
+                        }
+                    }
+                }, 500);
+                
                 function onScanSuccess(decodedText, decodedResult) {
                     if (scannerPaused) return;
                     
