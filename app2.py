@@ -322,23 +322,54 @@ if prog and prog['encontrados'] < prog['total']:
         <head>
             <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
             <style>
+                body { margin: 0; padding: 0; background-color: transparent; text-align: center; }
                 #reader { width: 100%; max-width: 450px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #38BDF8; }
                 #reader video { object-fit: cover; width: 100% !important; }
+                .btn-flip { background: #38BDF8; color: #0F172A; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
             </style>
         </head>
         <body>
             <div id="reader"></div>
+            <button class="btn-flip" id="swap-cam" style="display:none;">🔄 Cambiar Cámara</button>
             <script>
                 function onScanSuccess(decodedText, decodedResult) {
                     window.parent.postMessage({ type: 'streamlit:setComponentValue', value: decodedText }, '*');
                 }
-                let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 15, qrbox: {width: 280, height: 160}, experimentalFeatures: {useBarCodeDetectorIfSupported: true} }, false);
-                html5QrcodeScanner.render(onScanSuccess);
+                
+                const html5QrCode = new Html5Qrcode("reader");
+                const config = { fps: 15, qrbox: { width: 280, height: 160 } };
+                let useFrontCamera = false;
+
+                function startCamera() {
+                    const facingMode = useFrontCamera ? "user" : "environment";
+                    html5QrCode.start({ facingMode: facingMode }, config, onScanSuccess)
+                    .then(() => {
+                        document.getElementById('swap-cam').style.display = 'inline-block';
+                    })
+                    .catch(err => {
+                        console.log("Error starting camera: ", err);
+                        // Si falla la cámara trasera, intentar con la frontal como respaldo
+                        if (!useFrontCamera) {
+                            useFrontCamera = true;
+                            startCamera();
+                        }
+                    });
+                }
+                
+                document.getElementById('swap-cam').addEventListener('click', () => {
+                    html5QrCode.stop().then(() => {
+                        useFrontCamera = !useFrontCamera;
+                        startCamera();
+                    }).catch(err => console.log(err));
+                });
+
+                // Iniciar automáticamente
+                startCamera();
             </script>
         </body>
         </html>
         """
-        scanned_value = components.html(html_scanner, height=330)
+        scanned_value = components.html(html_scanner, height=450)
         st.text_input("Código capturado en vivo:", key="live_input", placeholder="Escaneando cámara...", on_change=procesar_y_limpiar_live)
     elif modo == "📷 Tomar Foto":
         foto = st.camera_input("Capturar etiqueta")
