@@ -322,28 +322,36 @@ if prog and prog['encontrados'] < prog['total']:
         <head>
             <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
             <style>
-                body { margin: 0; padding: 0; background-color: transparent; text-align: center; }
+                body { margin: 0; padding: 0; background-color: transparent; text-align: center; font-family: sans-serif; }
                 #reader { width: 100%; max-width: 450px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #38BDF8; }
                 #reader video { object-fit: cover; width: 100% !important; }
-                .btn-flip { background: #38BDF8; color: #0F172A; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                .btn { background: #38BDF8; color: #0F172A; border: none; padding: 14px 24px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 80%; max-width: 300px; }
+                .btn:active { background: #0ea5e9; }
+                #controls { margin-top: 15px; }
             </style>
         </head>
         <body>
             <div id="reader"></div>
-            <button class="btn-flip" id="swap-cam" style="display:none;">🔄 Cambiar Cámara</button>
+            <div id="controls">
+                <button class="btn" id="start-btn">▶️ Iniciar Cámara</button>
+                <button class="btn" id="swap-cam" style="display:none; margin-top: 10px;">🔄 Cambiar Cámara</button>
+            </div>
             <script>
                 function onScanSuccess(decodedText, decodedResult) {
                     window.parent.postMessage({ type: 'streamlit:setComponentValue', value: decodedText }, '*');
                 }
                 
                 const html5QrCode = new Html5Qrcode("reader");
-                const config = { fps: 15, qrbox: { width: 280, height: 160 } };
+                const config = { fps: 15, qrbox: { width: 250, height: 150 } };
                 let useFrontCamera = false;
+                let isScanning = false;
 
                 function startCamera() {
                     const facingMode = useFrontCamera ? "user" : "environment";
                     html5QrCode.start({ facingMode: facingMode }, config, onScanSuccess)
                     .then(() => {
+                        isScanning = true;
+                        document.getElementById('start-btn').style.display = 'none';
                         document.getElementById('swap-cam').style.display = 'inline-block';
                     })
                     .catch(err => {
@@ -352,24 +360,30 @@ if prog and prog['encontrados'] < prog['total']:
                         if (!useFrontCamera) {
                             useFrontCamera = true;
                             startCamera();
+                        } else {
+                            alert("No se pudo acceder a la cámara. Comprueba que el navegador tiene permisos.");
                         }
                     });
                 }
                 
-                document.getElementById('swap-cam').addEventListener('click', () => {
-                    html5QrCode.stop().then(() => {
-                        useFrontCamera = !useFrontCamera;
-                        startCamera();
-                    }).catch(err => console.log(err));
+                document.getElementById('start-btn').addEventListener('click', () => {
+                    startCamera();
                 });
 
-                // Iniciar automáticamente
-                startCamera();
+                document.getElementById('swap-cam').addEventListener('click', () => {
+                    if (isScanning) {
+                        html5QrCode.stop().then(() => {
+                            isScanning = false;
+                            useFrontCamera = !useFrontCamera;
+                            startCamera();
+                        }).catch(err => console.log(err));
+                    }
+                });
             </script>
         </body>
         </html>
         """
-        scanned_value = components.html(html_scanner, height=450)
+        scanned_value = components.html(html_scanner, height=480)
         st.text_input("Código capturado en vivo:", key="live_input", placeholder="Escaneando cámara...", on_change=procesar_y_limpiar_live)
     elif modo == "📷 Tomar Foto":
         foto = st.camera_input("Capturar etiqueta")
