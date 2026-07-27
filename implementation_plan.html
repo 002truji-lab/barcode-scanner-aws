@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Implementación - Escáner Streamlit AWS RDS</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --accent-blue: #38BDF8;
+            --accent-green: #10B981;
+            --accent-red: #EF4444;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--accent-blue);
+            font-size: 2.2rem;
+            font-weight: 800;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-top: 0;
+        }
+
+        h2 {
+            color: #E2E8F0;
+            font-size: 1.5rem;
+            margin-top: 35px;
+        }
+
+        h3 {
+            color: var(--accent-blue);
+            font-size: 1.2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+
+        .alert-important {
+            background-color: rgba(56, 189, 248, 0.1);
+            border-left: 4px solid var(--accent-blue);
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .alert-important strong {
+            color: var(--accent-blue);
+        }
+
+        .mermaid-container {
+            background-color: #1E293B;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        code {
+            background-color: #020617;
+            color: var(--accent-blue);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9em;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Plan de Implementación: Escáner de Código de Barras con Streamlit, PostgreSQL (AWS RDS) y Móvil</h1>
+        
+        <p>Aplicación web desplegada globalmente en Streamlit Cloud y orientada a movilidad internacional. Permite la lectura de etiquetas con <strong>uno o múltiples códigos de barras</strong> mediante el visor en tiempo real del smartphone, consultando la base de datos en AWS RDS y ofreciendo respuesta inmediata con sonido y color.</p>
+
+        <h2>📊 Arquitectura del Sistema (Diagrama de Flujo)</h2>
+        
+        <div class="mermaid-container">
+            <pre class="mermaid">
+            flowchart TD
+                subgraph Etiqueta con Múltiples Códigos
+                    E1[Código 1: EAN / SKU]
+                    E2[Código 2: Nº Serie / Lote]
+                end
+
+                subgraph Móvil & Streamlit App
+                    E1 & E2 -->|Escaneo en Vivo| A[Visor Cámara HTML5 / ZXing]
+                    A -->|Identifica Código| B[Streamlit App]
+                end
+
+                subgraph AWS RDS PostgreSQL
+                    B -->|Busca en columnas codigo_barras o codigo_secundario| C[(Tabla Productos)]
+                end
+
+                C -->|Encontrado| D[Tarjeta Verde + Beep Éxito]
+                C -->|No Encontrado| E[Tarjeta Roja + Beep Error]
+            </pre>
+        </div>
+
+        <h2>💡 Manejo de Etiquetas Complejas</h2>
+        <div class="alert-important">
+            <strong>Estrategia para etiquetas con varios códigos de barras:</strong>
+            <ol>
+                <li><strong>Detección Dinámica:</strong> El escáner capturará el código al que apuntes. Si hay varios en la misma vista, leerá el primero detectado y mostrará en pantalla qué código ha leído.</li>
+                <li><strong>Búsqueda Flexible en BD:</strong> La consulta SQL en PostgreSQL buscará la coincidencia en cualquiera de los campos habilitados (<code>codigo_barras</code>, <code>codigo_secundario</code>, <code>sku</code> o <code>numero_serie</code>).</li>
+                <li><strong>Filtro opcional:</strong> Se puede configurar la app para ignorar códigos que no cumplan un formato específico si fuera necesario.</li>
+            </ol>
+        </div>
+
+        <h2>🛠️ Componentes del Proyecto Creados</h2>
+        
+        <div class="card">
+            <h3>📄 app.py</h3>
+            <ul>
+                <li>Visor en vivo con <code>html5-qrcode</code> y selector de cámara (cámara trasera del móvil).</li>
+                <li>Manejo de etiquetas con múltiples códigos y visualización clara del código decodificado.</li>
+                <li>Renderizado de tarjeta de estado (Verde = Encontrado, Rojo = No Encontrado).</li>
+                <li>Alerta sonora (Beep agudo para éxito, Beep grave para error) con Web Audio API.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>📄 db.py</h3>
+            <ul>
+                <li>Conexión a PostgreSQL (AWS RDS) con <code>psycopg2</code>.</li>
+                <li>Consulta multi-campo (<code>WHERE codigo_barras = %s OR codigo_secundario = %s</code>).</li>
+                <li>Modo de respaldo local anonimizado.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>📄 upload_data.py</h3>
+            <ul>
+                <li>Script ejecutable localmente para crear la tabla <code>productos</code> e insertar registros masivamente en AWS RDS.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>📄 README.md & secrets.toml.template</h3>
+            <ul>
+                <li>Guía completa de configuración de reglas de entrada en AWS Security Group (puerto 5432) y despliegue gratuito en Streamlit Cloud.</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Proyecto Streamlit Barcode AWS RDS &copy; 2026</p>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+    </script>
+</body>
+</html>
