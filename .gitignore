@@ -1,0 +1,7 @@
+# Ocultar secretos locales de Streamlit
+.streamlit/
+.streamlit/*
+
+# Ocultar carpetas caché de Python
+__pycache__/
+*.pyc
