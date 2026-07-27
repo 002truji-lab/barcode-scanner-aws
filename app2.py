@@ -323,7 +323,7 @@ if prog and prog['encontrados'] < prog['total']:
             <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
             <style>
                 body { margin: 0; padding: 0; background-color: transparent; text-align: center; font-family: sans-serif; color: white; }
-                #reader { width: 100%; max-width: 450px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #38BDF8; background: #1E293B; }
+                #reader { width: 100%; max-width: 280px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #38BDF8; background: #1E293B; }
                 /* Estilos para que el menú de selección de cámara y botones se vean grandes y claros */
                 #reader button { background: #38BDF8 !important; color: #0F172A !important; border: none !important; padding: 10px 15px !important; border-radius: 8px !important; font-weight: bold !important; margin: 10px 5px !important; cursor: pointer !important; }
                 #reader select { padding: 10px !important; border-radius: 5px !important; background: #334155 !important; color: white !important; border: 1px solid #38BDF8 !important; margin-bottom: 10px !important; max-width: 95% !important; font-size: 1rem !important; }
@@ -367,7 +367,7 @@ if prog and prog['encontrados'] < prog['total']:
                 
                 let config = {
                     fps: 15,
-                    qrbox: {width: 250, height: 150},
+                    qrbox: {width: 200, height: 120},
                     aspectRatio: 1.0,
                     rememberLastUsedCamera: true,
                     experimentalFeatures: {useBarCodeDetectorIfSupported: true}
@@ -379,7 +379,7 @@ if prog and prog['encontrados'] < prog['total']:
         </body>
         </html>
         """
-        scanned_value = components.html(html_scanner, height=500)
+        scanned_value = components.html(html_scanner, height=420)
         st.text_input("Código capturado en vivo:", key="live_input", placeholder="Escaneando cámara...", on_change=procesar_y_limpiar_live)
     elif modo == "📷 Tomar Foto":
         foto = st.camera_input("Capturar etiqueta")
